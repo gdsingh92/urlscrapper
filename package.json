@@ -1,0 +1,11 @@
+{
+  "name": "urlcrawler",
+  "version": "1.0.0",
+  "description": "This app crawls a given URLS and finds all other URLS associated ",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "G.D. Singh",
+  "license": "ISC"
+}
