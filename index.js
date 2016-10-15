@@ -1,4 +1,5 @@
 var https = require('https'),
+    http = require('http'),
     fs = require('fs'),
     cheerio = require('cheerio');
 
@@ -15,9 +16,22 @@ var OUTPUTFILE = "./urls.txt";
 var extractLinks = function(data) {
     var $ = cheerio.load(data);
     var links = [];
+
     $('a').each(function() {
         var link = $(this);
         links.push(link.attr('href'));
+    });
+
+    $('link').each(function() {
+        var link = $(this);
+        links.push(link.attr('href'));
+    });
+
+    $('script').each(function() {
+        var href = $(this).attr('src');
+        if (href) {
+            links.push(href);
+        }
     });
     return links;
 };
@@ -26,7 +40,16 @@ var extractLinks = function(data) {
  * Download a given URL and get HTML links
  */
 var getRelatedLinks = function(url, callback) {
-    https.get(url, function(res) {
+    var method = null;
+
+    // process on HTTP or HTTPS urls
+    if (url.indexOf('https') == 0) { method = https; }
+    else if (url.indexOf('http') == 0) { method = http; }
+    else {
+        return callback(null, []);
+    }
+
+    var request = method.request(url, function(res) {
         var data = '';
         res.on('data', function(chunk) {
             data += chunk;
@@ -37,6 +60,11 @@ var getRelatedLinks = function(url, callback) {
             return callback(null, links);
         });
     });
+
+    request.on('error', function(e) {
+        return callback(e);
+    });
+    request.end();
 };
 
 /**
@@ -113,6 +141,10 @@ var crawl = function(url, callback) {
     console.log(url);
 
     getRelatedLinks(url, function(err, links) {
+        if (err) {
+            console.error(err);
+            return callback();
+        }
         links = filterLinks(links);
         if (links.length == 0) {
             return callback();
@@ -136,6 +168,12 @@ if (args.length < 3) {
     process.exit(1);
 }
 
+// delete old file.
+try {
+    fs.unlinkSync(OUTPUTFILE);
+} catch(e) { }
+
+// start crawling.
 crawl(args[2], function() {
     console.log('Execution completed.')
 });
