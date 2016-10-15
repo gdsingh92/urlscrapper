@@ -18,13 +18,17 @@ var extractLinks = function(data) {
     var links = [];
 
     $('a').each(function() {
-        var link = $(this);
-        links.push(link.attr('href'));
+        var href = $(this).attr('href');
+        if (href) {
+            links.push(href);
+        }
     });
 
     $('link').each(function() {
-        var link = $(this);
-        links.push(link.attr('href'));
+        var href = $(this).attr('href');
+        if (href) {
+            links.push(href);
+        }
     });
 
     $('script').each(function() {
@@ -105,7 +109,8 @@ var batchify = function(itemList, batchSize) {
 var crawlBatch = function(batch, callback) {
     var completed = 0;
     var _callback = function() {
-        if (callback == batch.length) { return callback(); }
+        completed += 1;
+        if (completed == batch.length) { return callback(); }
     }
 
     batch.forEach(function(url) { crawl(url, _callback); });
@@ -117,7 +122,7 @@ var crawlBatch = function(batch, callback) {
 var crawlBatches = function(batches, batchIndex, callback) {
     crawlBatch(batches[batchIndex], function() {
         batchIndex++;
-        if ( batchIndex != batches.length) { crawlBatches(batches, batchIndex); }
+        if ( batchIndex != batches.length) { crawlBatches(batches, batchIndex, callback); }
         else { return callback(); }
     });
 };
