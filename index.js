@@ -1,7 +1,8 @@
 var https = require('https'),
     http = require('http'),
     fs = require('fs'),
-    cheerio = require('cheerio');
+    cheerio = require('cheerio'),
+    async = require('async');
 
 // list to store already processed links.
 var LINKS = [];
@@ -107,23 +108,25 @@ var batchify = function(itemList, batchSize) {
 };
 
 var crawlBatch = function(batch, callback) {
-    var completed = 0;
-    var _callback = function() {
-        completed += 1;
-        if (completed == batch.length) { return callback(); }
-    }
-
-    batch.forEach(function(url) { crawl(url, _callback); });
+    async.each(batch, function(url, cb) {
+        crawl(url, function() {
+            return cb();
+        });
+    }, function() {
+        return callback();
+    })
 }
 
 /**
  * Crawl a given set of links. Divide into batches of 5 and parse in parallel.
  */
-var crawlBatches = function(batches, batchIndex, callback) {
-    crawlBatch(batches[batchIndex], function() {
-        batchIndex++;
-        if ( batchIndex != batches.length) { crawlBatches(batches, batchIndex, callback); }
-        else { return callback(); }
+var crawlBatches = function(batches, callback) {
+    async.eachSeries(batches, function(batch, cb) {
+        crawlBatch(batch, function() {
+            return cb();
+        });
+    }, function () {
+        return callback();
     });
 };
 
@@ -159,7 +162,7 @@ var crawl = function(url, callback) {
 
         // divide links into batches.
         var batches = batchify(links);
-        crawlBatches(batches, 0, function() {
+        crawlBatches(batches, function() {
             return callback();
         });
     });

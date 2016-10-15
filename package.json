@@ -9,6 +9,7 @@
   "author": "G.D. Singh",
   "license": "ISC",
   "dependencies": {
+    "async": "^2.1.1",
     "cheerio": "^0.22.0"
   }
 }
